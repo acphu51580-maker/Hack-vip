@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MR.PHUC - Admin</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+  body {
+    min-height:100vh;
+    background:#fff;
+    padding:20px;
+  }
+  .container {
+    background:#fff;
+    border-radius:16px;
+    padding:25px 20px;
+    max-width:600px;
+    margin:0 auto;
+    border:2px solid #e5e5e5;
+    box-shadow:0 8px 40px rgba(0,0,0,0.08);
+  }
+  h1 { color:#111; font-size:20px; margin-bottom:4px; letter-spacing:1px; }
+  .subtitle { color:#888; font-size:11px; letter-spacing:2px; margin-bottom:22px; }
+
+  .key-options {
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:8px;
+    margin-bottom:20px;
+  }
+  .key-options button {
+    padding:12px 6px;
+    border:none;
+    border-radius:8px;
+    background:#111;
+    color:#fff;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.2s;
+  }
+  .key-options button:hover { background:#333; transform:translateY(-2px); }
+  .btn-perm { background:#c00 !important; grid-column:span 3; }
+  .btn-perm:hover { background:#e00 !important; }
+
+  .section-title {
+    color:#111;
+    font-size:13px;
+    font-weight:800;
+    margin:20px 0 10px;
+    letter-spacing:1px;
+  }
+
+  .key-item {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px;
+    background:#f8f8f8;
+    border-radius:8px;
+    margin-bottom:8px;
+    border-left:3px solid #111;
+    cursor:pointer;
+    transition:0.2s;
+    font-size:12px;
+  }
+  .key-item:hover { background:#f0f0f0; transform:translateX(3px); }
+  .key-code {
+    font-family:'Courier New',monospace;
+    font-weight:700;
+    color:#111;
+    font-size:12px;
+  }
+  .key-badge {
+    background:#111;
+    color:#fff;
+    padding:3px 8px;
+    border-radius:12px;
+    font-size:10px;
+    margin-left:6px;
+    white-space:nowrap;
+  }
+  .key-info { font-size:10px; color:#888; margin-top:3px; }
+
+  .copy-hint {
+    font-size:10px;
+    color:#aaa;
+    text-align:center;
+    margin-top:12px;
+  }
+
+  .back-btn {
+    width:100%;
+    padding:12px;
+    background:#e5e5e5;
+    color:#111;
+    border:none;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    margin-top:15px;
+    letter-spacing:1px;
+  }
+  .back-btn:hover { background:#ccc; }
+
+  .toast {
+    position:fixed;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#111;
+    color:#fff;
+    padding:12px 22px;
+    border-radius:30px;
+    font-size:13px;
+    z-index:999;
+    animation: slideDown 0.3s ease;
+  }
+  @keyframes slideDown {
+    from { opacity:0; top:-50px; }
+    to { opacity:1; top:20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>👑 ADMIN PANEL</h1>
+  <p class="subtitle">MR.PHUC</p>
+
+  <div class="section-title">🎫 TẠO KEY MỚI</div>
+  <div class="key-options">
+    <button onclick="createKey('1d')">1 NGÀY</button>
+    <button onclick="createKey('3d')">3 NGÀY</button>
+    <button onclick="createKey('7d')">7 NGÀY</button>
+    <button onclick="createKey('30d')">30 NGÀY</button>
+    <button onclick="createKey('60d')">60 NGÀY</button>
+    <button class="btn-perm" onclick="createKey('perm')">♾ VĨNH VIỄN</button>
+  </div>
+
+  <div class="section-title">📋 DANH SÁCH KEY</div>
+  <div id="keyList"></div>
+  <p class="copy-hint">💡 Bấm vào key để sao chép</p>
+
+  <button class="back-btn" onclick="logout()">ĐĂNG XUẤT</button>
+</div>
+
+<script>
+// Kiểm tra đăng nhập
+if (localStorage.getItem('mrphuc_admin') !== 'ok') {
+  window.location.href = 'index.html';
+}
+
+let validKeys = JSON.parse(localStorage.getItem('mrphuc_keys') || '[]');
+let usedKeys  = JSON.parse(localStorage.getItem('mrphuc_used') || '[]');
+
+// ============ TẠO KEY ============
+function randomDigits(len) {
+  let r = '';
+  for (let i = 0; i < len; i++) r += Math.floor(Math.random() * 10);
+  return r;
+}
+
+function createKey(duration) {
+  let key;
+  let tries = 0;
+  do {
+    key = 'phuc-' + duration + '-' + randomDigits(4);
+    tries++;
+    if (tries > 100) break;
+  } while (validKeys.find(function(k){ return k.key === key; }));
+
+  const created = Date.now();
+  let expire = null;
+  if (duration !== 'perm') {
+    const ms = {
+      '1d': 86400000,
+      '3d': 259200000,
+      '7d': 604800000,
+      '30d': 2592000000,
+      '60d': 5184000000
+    }[duration];
+    expire = created + ms;
+  }
+
+  validKeys.push({ key: key, duration: duration, created: created, expire: expire });
+  saveKeys();
+  renderKeys();
+  toast('✓ Đã tạo: ' + key);
+}
+
+function saveKeys() {
+  localStorage.setItem('mrphuc_keys', JSON.stringify(validKeys));
+  localStorage.setItem('mrphuc_used', JSON.stringify(usedKeys));
+}
+
+// ============ HIỂN THỊ KEY ============
+function renderKeys() {
+  const list = document.getElementById('keyList');
+  if (validKeys.length === 0) {
+    list.innerHTML = '<p style="text-align:center;color:#bbb;font-size:12px;">Chưa có key nào</p>';
+    return;
+  }
+  list.innerHTML = validKeys.map(function(k) {
+    const expired = k.expire && Date.now() > k.expire;
+    const used = usedKeys.indexOf(k.key) !== -1;
+    const status = expired ? '❌ Hết hạn' : (used ? '✅ Đã dùng' : '🟢 Hoạt động');
+    return '<div class="key-item" onclick="copyKey(\'' + k.key + '\')">' +
+      '<div>' +
+        '<div class="key-code">' + k.key + '</div>' +
+        '<div class="key-info">' + status + '</div>' +
+      '</div>' +
+      '<span class="key-badge">' + k.duration + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+// ============ COPY KEY ============
+function copyKey(key) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(key).then(function() {
+      toast('📋 Đã sao chép: ' + key);
+    }).catch(function(){ fallbackCopy(key); });
+  } else { fallbackCopy(key); }
+}
+
+function fallbackCopy(key) {
+  const ta = document.createElement('textarea');
+  ta.value = key;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); toast('📋 Đã sao chép: ' + key); }
+  catch(e) { alert('Key: ' + key); }
+  ta.remove();
+}
+
+function toast(text) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 2000);
+}
+
+function logout() {
+  localStorage.removeItem('mrphuc_admin');
+  window.location.href = 'index.html';
+}
+
+renderKeys();
+</script>
+</body>
+</html>
