@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MR.PHUC - Menu</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+  body {
+    min-height:100vh;
+    background:#000;
+    color:#fff;
+    padding:15px;
+    overflow-x:hidden;
+  }
+  .header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:rgba(20,20,20,0.95);
+    padding:12px 15px;
+    border-radius:10px;
+    border:1px solid #333;
+    margin-bottom:15px;
+  }
+  .logo {
+    font-weight:800;
+    font-size:16px;
+    color:#0f0;
+    letter-spacing:2px;
+    text-shadow:0 0 10px rgba(0,255,0,0.5);
+  }
+  .timer-header {
+    font-family:'Courier New',monospace;
+    font-size:14px;
+    color:#0ff;
+    font-weight:700;
+  }
+  .menu-btn {
+    position:fixed;
+    top:15px;
+    left:15px;
+    z-index:100;
+    background:rgba(20,20,20,0.95);
+    border:1px solid #0f0;
+    color:#0f0;
+    padding:10px 14px;
+    border-radius:8px;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+  }
+  .menu-overlay {
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.92);
+    z-index:200;
+    padding:60px 20px 20px;
+    overflow-y:auto;
+    display:none;
+  }
+  .menu-overlay.show { display:block; }
+  .close-btn {
+    position:fixed;
+    top:15px;
+    right:15px;
+    background:#c00;
+    color:#fff;
+    border:none;
+    padding:10px 14px;
+    border-radius:8px;
+    font-weight:700;
+    cursor:pointer;
+    font-size:14px;
+  }
+  .menu-title {
+    text-align:center;
+    color:#0f0;
+    font-size:18px;
+    font-weight:800;
+    letter-spacing:3px;
+    margin-bottom:20px;
+    text-shadow:0 0 15px rgba(0,255,0,0.6);
+  }
+  .tabs {
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:8px;
+    margin-bottom:20px;
+  }
+  .tab {
+    padding:12px 6px;
+    text-align:center;
+    background:#111;
+    border:1px solid #333;
+    border-radius:8px;
+    color:#888;
+    font-weight:700;
+    font-size:12px;
+    cursor:pointer;
+    transition:0.2s;
+    letter-spacing:1px;
+  }
+  .tab.active {
+    background:#0f0;
+    color:#000;
+    border-color:#0f0;
+    box-shadow:0 0 15px rgba(0,255,0,0.5);
+  }
+  .menu-content {
+    background:#0a0a0a;
+    border:1px solid #222;
+    border-radius:12px;
+    padding:15px;
+  }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+  .toggle-row {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 8px;
+    border-bottom:1px solid #1a1a1a;
+  }
+  .toggle-row:last-child { border-bottom:none; }
+  .toggle-label {
+    font-size:13px;
+    color:#ddd;
+    font-weight:600;
+  }
+  .toggle-desc {
+    font-size:10px;
+    color:#666;
+    margin-top:2px;
+  }
+  .switch {
+    position:relative;
+    display:inline-block;
+    width:48px;
+    height:26px;
+    flex-shrink:0;
+  }
+  .switch input { opacity:0; width:0; height:0; }
+  .slider {
+    position:absolute;
+    cursor:pointer;
+    top:0; left:0; right:0; bottom:0;
+    background:#333;
+    transition:.3s;
+    border-radius:26px;
+  }
+  .slider:before {
+    position:absolute;
+    content:"";
+    height:20px; width:20px;
+    left:3px; bottom:3px;
+    background:#fff;
+    transition:.3s;
+    border-radius:50%;
+  }
+  .switch input:checked + .slider {
+    background:#0f0;
+    box-shadow:0 0 12px rgba(0,255,0,0.6);
+  }
+  .switch input:checked + .slider:before {
+    transform:translateX(22px);
+    background:#000;
+  }
+  .main-screen {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:70vh;
+    flex-direction:column;
+    text-align:center;
+  }
+  .main-screen h2 {
+    color:#0f0;
+    font-size:24px;
+    margin-bottom:10px;
+    letter-spacing:3px;
+    text-shadow:0 0 20px rgba(0,255,0,0.7);
+  }
+  .main-screen p {
+    color:#666;
+    font-size:12px;
+    letter-spacing:2px;
+  }
+  .toast {
+    position:fixed;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#0f0;
+    color:#000;
+    padding:10px 20px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:700;
+    z-index:999;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">MR.PHUC</div>
+  <div class="timer-header" id="timerHeader">--:--:--</div>
+</div>
+
+<div class="main-screen">
+  <h2>MR.PHUC MENU</h2>
+  <p>NHẤN NÚT MENU ĐỂ BẮT ĐẦU</p>
+</div>
+
+<button class="menu-btn" onclick="toggleMenu()">☰ MENU</button>
+
+<div class="menu-overlay" id="menuOverlay">
+  <button class="close-btn" onclick="toggleMenu()">✕ ĐÓNG</button>
+  <div class="menu-title">MR.PHUC MENU</div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(this, 'v1')">V1</div>
+    <div class="tab" onclick="switchTab(this, 'v2')">V2</div>
+    <div class="tab" onclick="switchTab(this, 'vip')">VIP PRO</div>
+    <div class="tab" onclick="switchTab(this, 'fix')">FIX VĂNG</div>
+    <div class="tab" onclick="switchTab(this, 'aim')">AIM</div>
+    <div class="tab" onclick="switchTab(this, 'dv')">ĐV</div>
+  </div>
+
+  <div class="menu-content">
+    <div class="tab-panel active" id="tab-v1">
+      <div class="toggle-row">
+        <div><div class="toggle-label">Menu V1 - Cơ bản</div><div class="toggle-desc">Bật/tắt tính năng V1</div></div>
+        <label class="switch"><input type="checkbox" onchange="toggleFeature('V1', this)"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">Hiển thị thông tin</div><div class="toggle-desc">Xem thông tin cơ bản</div></div>
+        <label class="switch"><input type="checkbox" onchange="toggleFeature('Info V1', this)"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-v2">
+      <div class="toggle-row">
+        <div><div class="toggle-label">Menu V2 - Nâng cao</div><div class="toggle-desc">Bật/tắt tính năng V2</div></div>
+        <label class="switch"><input type="checkbox" onchange="toggleFeature('V2', this)"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">Tăng tốc</div><div class="toggle-desc">Tối ưu hiệu suất</div></div>
+        <label class="switch"><input type="checkbox" onchange="toggleFeature('Speed', this)"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-vip">
+      <div class="toggle-row">
+        <div><div class="toggle-label">VIP PRO</div><div class="toggle-desc">Bật toàn bộ tính năng VIP</div></div>
+        <label class="switch"><input type="checkbox" onchange="toggleFeature('VIP', this)"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">Không giật lag</div><div"></ class="toggle-desc">Mượt mà hơn</div></div>
+        <label class="switch"><input type="checkboxspan" onchange="toggleFeature('No Lag', this)"><span class="slider"></></span></label>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="label>
+     tab-fix">
+      <div class="toggle-row">
+        <div><div class="toggle-label">Chống văng</div><div class="toggle-desc">Không bị đẩy ra</div></div>
+        <label class="switch"><input type="checkbox" onchange="toggleFeature('Anti Kick', this)"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">Ổn định kết nối</div><div class="toggle-desc">Giữ kết nối ổn định</div></div>
+        <label class="switch"><input type="checkbox" onchange="toggleFeature('Stable', this)"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-aim">
+      <div class="toggle-row">
+        <div><div class="toggle-label">Aim Lock</div><div class="toggle-desc">Khóa mục tiêu</div></div>
+        <label class="switch"><input type="checkbox" onchange="toggleFeature('Aim Lock', this)"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">Aim Drag</div><div class="toggle-desc">Kéo mục tiêu</div></div>
+        <label class="switch"><input type="checkbox" onchange="toggleFeature('Aim Drag', this)"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">Aim Cổ</div><div class="toggle-desc">Nhắm vào cổ</div></div>
+        <label class="switch"><input type="checkbox" onchange="toggleFeature('Aim Co', this)"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">Aim Body</div><div class="toggle-desc">Nhắm vào thân</div></div>
+        <label class="switch"><input type="checkbox" onchange="toggleFeature('Aim Body', this)"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-dv">
+      <div class="toggle-row">
+        <div><div class="toggle-label">ĐV Nhìn Xuyên Tường</div><div class="toggle-desc">Xem qua vật cản</div></div>
+        <label class="switch"><input type="checkbox" onchange="toggleFeature('DV Tuong', this)"><span class="slider </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">ĐV Nhìn Xuyên Kẹo</div><div class="toggle-desc">Xem qua kẹo</div></div>
+        <label class="switch"><input type="checkbox" onchange="toggleFeature('DV Keo', this)"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">ĐV Súng</div><div class="toggle-desc">Hiển thị súng địch</div></div>
+        <label class="switch"><input type="checkbox" onchange="toggleFeature('DV Sung', this)"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">ĐV Nhân Vật</div><div class="toggle-desc">Hiển thị nhân vật địch</div></div>
+        <label class="switch"><input type="checkbox" onchange="toggleFeature('DV NhanVat', this)"><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const active = JSON.parse(localStorage.getItem('mrphuc_active') || 'null');
+if (!active || !active.expire || Date.now() > active.expire) {
+  if (active && active.duration !== 'perm') {
+    window.location.href = 'index.html';
+  }
+}
+
+function updateTimer() {
+  const a = JSON.parse(localStorage.getItem('mrphuc_active') || 'null');
+  if (!a || !a.expire) {
+    document.getElementById('timerHeader').textContent = '∞ VĨNH VIỄN';
+    return;
+  }
+  const left = a.expire - Date.now();
+  if (left <= 0) {
+    localStorage.removeItem('mrphuc_active');
+    window.location.href = 'index.html';
+    return;
+  }
+  const h = Math.floor(left / 3600000);
+  const m = Math.floor((left % 3600000) / 60000);
+  const s = Math.floor((left % 60000) / 1000);
+  document.getElementById('timerHeader').textContent = 
+    String(h).padStart(2,'0') + ':' +
+    String(m).padStart(2,'0') + ':' +
+    String(s).padStart(2,'0');
+}
+updateTimer();
+setInterval(updateTimer, 1000);
+
+function toggleMenu() {
+  document.getElementById('menuOverlay').classList.toggle('show');
+}
+
+function switchTab(el, tab) {
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  el.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function toggleFeature(name, el) {
+  const status = el.checked ? 'BẬT' : 'TẮT';
+  toast('✓ ' + name + ': ' + status);
+}
+
+function toast(text) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 1500);
+}
+</script>
+</body>
+</html>
