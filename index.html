@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MR.PHUC - Key System</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+  body {
+    min-height:100vh;
+    background: #ffffff;
+    display:flex; justify-content:center; align-items:center;
+    padding:20px;
+  }
+  .container {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 35px 28px;
+    width: 100%; max-width: 400px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+    border: 2px solid #e5e5e5;
+  }
+  h1 {
+    text-align:center;
+    color:#111;
+    font-size:22px;
+    font-weight:800;
+    margin-bottom:6px;
+    letter-spacing:1px;
+  }
+  .subtitle {
+    text-align:center;
+    color:#888;
+    font-size:12px;
+    margin-bottom:25px;
+    letter-spacing:2px;
+  }
+  input {
+    width:100%;
+    padding:14px 16px;
+    margin-bottom:6px;
+    border:2px solid #e5e5e5;
+    border-radius:10px;
+    font-size:14px;
+    outline:none;
+    background:#f8f8f8;
+    color:#111;
+    transition:0.2s;
+  }
+  input:focus { border-color:#111; background:#fff; }
+  input::placeholder { color:#aaa; }
+
+  button {
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    background:#111;
+    color:#fff;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    margin-bottom:10px;
+    letter-spacing:1px;
+    transition:0.2s;
+  }
+  button:hover { background:#333; }
+  button:active { transform:scale(0.98); }
+
+  .btn-paste { background:#555; margin-top:8px; }
+  .btn-paste:hover { background:#777; }
+
+  .admin-link {
+    text-align:center;
+    font-size:11px;
+    color:#bbb;
+    cursor:pointer;
+    margin-top:18px;
+    user-select:none;
+    letter-spacing:2px;
+  }
+  .admin-link:hover { color:#111; }
+
+  .hidden { display:none !important; }
+
+  .message {
+    padding:10px;
+    border-radius:8px;
+    text-align:center;
+    font-size:13px;
+    margin-bottom:12px;
+    font-weight:600;
+  }
+  .error { background:#ffe0e0; color:#c00; }
+  .success { background:#d4f8d4; color:#060; }
+
+  .timer-box {
+    background:#f0f0f0;
+    border-radius:10px;
+    padding:12px;
+    text-align:center;
+    margin-bottom:12px;
+    display:none;
+  }
+  .timer-label { font-size:11px; color:#666; letter-spacing:2px; }
+  .timer-value {
+    font-size:24px;
+    font-weight:800;
+    color:#111;
+    font-family:'Courier New',monospace;
+    margin-top:4px;
+  }
+
+  .paste-hint {
+    font-size:10px;
+    color:#aaa;
+    text-align:center;
+    margin-bottom:12px;
+    letter-spacing:1px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="mainBox">
+  <h1>MR.PHUC</h1>
+  <p class="subtitle">KEY SYSTEM</p>
+
+  <div id="msgBox"></div>
+
+  <div class="timer-box" id="timerBox">
+    <div class="timer-label">⏱ THỜI GIAN CÒN LẠI</div>
+    <div class="timer-value" id="timerValue">00:00:00</div>
+  </div>
+
+  <input type="text" id="keyInput" placeholder="Nhập key của bạn...">
+  <p class="paste-hint">💡 Nhấn DÁN KEY ĐÃ LƯU để tự động điền</p>
+
+  <button onclick="checkKey()">🔓 XÁC NHẬN KEY</button>
+  <button class="btn-paste" onclick="pasteKey()">📋 DÁN KEY ĐÃ LƯU</button>
+
+  <div class="admin-link" onclick="showAdminLogin()">⚙ ADMIN</div>
+</div>
+
+<div class="container hidden" id="adminLogin">
+  <h1>ADMIN LOGIN</h1>
+  <p class="subtitle">CHỈ QUẢN TRỊ VIÊN</p>
+  <div id="adminMsgBox"></div>
+
+  <input type="text" id="adminUser" placeholder="Tên đăng nhập">
+  <input type="password" id="adminPass" placeholder="Mật khẩu">
+  <button onclick="adminLogin()">ĐĂNG NHẬP</button>
+  <button style="background:#bbb;" onclick="showMain()">← QUAY LẠI</button>
+</div>
+
+<script>
+const ADMIN_USER = 'phc51580';
+const ADMIN_PASS = 'phc51580';
+
+let validKeys = JSON.parse(localStorage.getItem('mrphuc_keys') || '[]');
+let usedKeys  = JSON.parse(localStorage.getItem('mrphuc_used') || '[]');
+let savedKey  = localStorage.getItem('mrphuc_saved') || '';
+let timerInterval = null;
+
+function showMain() {
+  document.getElementById('mainBox').classList.remove('hidden');
+  document.getElementById('adminLogin').classList.add('hidden');
+}
+function showAdminLogin() {
+  document.getElementById('mainBox').classList.add('hidden');
+  document.getElementById('adminLogin').classList.remove('hidden');
+}
+
+function showMsg(boxId, text, type) {
+  const box = document.getElementById(boxId);
+  box.innerHTML = '<div class="message ' + type + '">' + text + '</div>';
+  setTimeout(function(){ box.innerHTML = ''; }, 3000);
+}
+
+function pasteKey() {
+  if (!savedKey) {
+    showMsg('msgBox', '⚠ Chưa có key nào được lưu!', 'error');
+    return;
+  }
+  document.getElementById('keyInput').value = savedKey;
+  showMsg('msgBox', '✓ Đã dán key đã lưu', 'success');
+}
+
+function startTimer(endTime) {
+  const box = document.getElementById('timerBox');
+  const val = document.getElementById('timerValue');
+  box.style.display = 'block';
+  
+  if (timerInterval) clearInterval(timerInterval);
+  
+  function update() {
+    const now = Date.now();
+    const left = endTime - now;
+    
+    if (left <= 0) {
+      val.textContent = '00:00:00';
+      clearInterval(timerInterval);
+      showMsg('msgBox', '❌ Key đã hết hạn!', 'error');
+      localStorage.removeItem('mrphuc_active');
+      return;
+    }
+    
+    const h = Math.floor(left / 3600000);
+    const m = Math.floor((left % 3600000) / 60000);
+    const s = Math.floor((left % 60000) / 1000);
+    val.textContent = 
+      String(h).padStart(2,'0') + ':' +
+      String(m).padStart(2,'0') + ':' +
+      String(s).padStart(2,'0');
+  }
+  update();
+  timerInterval = setInterval(update, 1000);
+}
+
+function checkKey() {
+  const input = document.getElementById('keyInput').value.trim();
+  if (!input) {
+    showMsg('msgBox', '⚠ Vui lòng nhập key!', 'error');
+    return;
+  }
+
+  const found = validKeys.find(function(k){ return k.key === input; });
+  if (!found) {
+    showMsg('msgBox', '❌ Key không hợp lệ!', 'error');
+    return;
+  }
+  if (usedKeys.indexOf(input) !== -1) {
+    showMsg('msgBox', '❌ Key đã được sử dụng!', 'error');
+    return;
+  }
+  if (found.expire && Date.now() > found.expire) {
+    showMsg('msgBox', '❌ Key đã hết hạn!', 'error');
+    return;
+  }
+
+  usedKeys.push(input);
+  localStorage.setItem('mrphuc_used', JSON.stringify(usedKeys));
+  localStorage.setItem('mrphuc_saved', input);
+  
+  const session = {
+    key: input,
+    expire: found.expire,
+    duration: found.duration
+  };
+  localStorage.setItem('mrphuc_active', JSON.stringify(session));
+
+  showMsg('msgBox', '✓ Xác nhận thành công!', 'success');
+  
+  if (found.expire) startTimer(found.expire);
+  
+  setTimeout(function() {
+    window.location.href = 'hack.html';
+  }, 1200);
+}
+
+function adminLogin() {
+  const u = document.getElementById('adminUser').value.trim();
+  const p = document.getElementById('adminPass').value.trim();
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    localStorage.setItem('mrphuc_admin', 'ok');
+    window.location.href = 'admin.html';
+  } else {
+    showMsg('adminMsgBox', '❌ Sai tên hoặc mật khẩu!', 'error');
+  }
+}
+
+document.getElementById('keyInput').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') checkKey();
+});
+document.getElementById('adminPass').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') adminLogin();
+});
+
+window.onload = function() {
+  const active = JSON.parse(localStorage.getItem('mrphuc_active') || 'null');
+  if (active && active.expire && Date.now() < active.expire) {
+    startTimer(active.expire);
+  }
+};
+</script>
+</body>
+</html>
